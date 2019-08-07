@@ -1,0 +1,495 @@
+<link rel="import" href="../../bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="../../bower_components/iron-icon/iron-icon.html">
+<link rel="import" href="../../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../../bower_components/paper-styles/typography.html">
+<link rel="import" href="../../bower_components/paper-toast/paper-toast.html">
+<link rel="import" href="../../bower_components/fullcalendar-calendar/fullcalendar-theme.html">
+<link rel="import" href="../../bower_components/fullcalendar-calendar/fullcalendar-calendar.html">
+<link rel="import" href="../../bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="../../bower_components/vaadin-grid/vaadin-grid.html">
+<link rel="import" href="../../bower_components/vaadin-grid/vaadin-grid-selection-column.html">
+<link rel="import" href="../../bower_components/vaadin-grid/vaadin-grid-sort-column.html">
+
+
+<dom-module id="my-calendar">
+    <link rel="import" type="css" href="../../bower_components/fullcalendar/dist/fullcalendar.min.css">
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <script src="https://momentjs.com/downloads/moment.min.js"></script>
+    <script src="../../bower_components/fullcalendar/dist/fullcalendar.min.js"></script>
+    <script src="../../bower_components/webcomponentsjs/webcomponents-lite.js"></script>
+    <link rel="import" href="../../bower_components/svg-piechart/svg-piechart.html">
+    <script src="lang-nl.js"></script>
+
+    <template>
+        <style>
+            :host {
+                display: block;
+                background-color: white;
+                padding: 20px;
+            }
+
+            #calendar {
+
+                --fullcalendar-borders: {
+                    border-color: lightgray;
+                };
+
+                --fullcalendar-day-numbers: {
+                    color: black;
+                };
+
+                --fullcalendar-day-headers: {
+                    color: black;
+                    background-color: white;
+                    font-weight: 500;
+                };
+
+                --fullcalendar-today: {
+                    background: lightgrey;
+                    /*border-color: black;*/
+                };
+
+                --fullcalendar-event: {
+                    background-color: #1a9fd9;
+                    /*border-color: black;*/
+                    cursor: pointer;
+                    border: none;
+                };
+
+                --fullcalendar-content-time: {
+                    color: black;
+                };
+            }
+
+            table#tableAttendance {
+                height: 12rem;
+                /*width: 100%;*/
+                margin-left: 5px;
+                display: inline-block;
+                overflow-y: scroll;
+            }
+
+            #tableAttendance tbody {
+                display: block;
+            }
+
+            #tableAttendance th:nth-child(2) {
+                width: 100%;
+            }
+
+            #tableAttendance tr:nth-child(even) {
+                background-color: #f2f2f2;
+            }
+
+            #tableAttendance tr:hover {
+                background-color: #ddd;
+            }
+
+            #tableAttendance tr {
+                width: 100%;
+            }
+
+            #table-escaleren {
+                height: 100%;
+            }
+
+            .my-button {
+                color: white;
+                background: #1a9fd9;
+                --paper-button-ink-color: #00567B;
+                margin-top: 5px;
+                margin-left: 0px;
+                float: right;
+            }
+
+            div[verborgen] {
+                display: none;
+            }
+
+            .pie-chart-container {
+                margin-left: 20%;
+                /*width: 108.8%;*/
+                margin-top: 10px;
+            }
+        </style>
+
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css"
+              integrity="sha384-50oBUHEmvpQ+1lW4y57PTFmhCaXp0ML5d60M1M7uH2+nqUivzIebhndOJK28anvf" crossorigin="anonymous">
+
+        <fullcalendar-calendar
+                id="calendar"
+                on-event-click="_eventClick"
+                _options="{{_options}}">
+        </fullcalendar-calendar>
+        <link rel="import" href="../../FullCalendarTheme.html">
+        <dom-module id="fullcalendar-theme">
+            <template>
+                <style include="FullCalendarTheme"></style>
+            </template>
+        </dom-module>
+
+        <!-- Used: https://www.webcomponents.org/element/rohithsathya/rsat-popup -->
+        <rsat-popup id="popup" pos="center" backdrop="true" hidden="{{_hidePopup}}">
+
+            <div name="header"
+                 style="background-color: #00a1e1; margin-top: -20px; height: 3.5rem; color: white; font-weight: bold; display: flex; flex-direction: row;">
+                <div style="flex: 0 0 0; margin: 10px;">
+                    <i style="font-size: 2.5em; width: auto" class="far fa-clock"></i>
+                </div>
+                <div style="flex: 14 0 0; margin-left: 1rem">
+                    <h1 style="margin-top: 8px;">{{_cursusName}}</h1>
+                </div>
+                <div style="flex: 1 0 0">
+                    <paper-button on-click="_closePopup"><i style="font-size: 2.5em" class="fas fa-times"></i></paper-button>
+                </div>
+            </div>
+            <div name="content" style="width: 50rem; margin: 3%; height: 20rem;">
+                <div style="border-bottom: solid 1px black; width: 93%; display: flex; flex-direction: row;">
+                    <div style="flex: 5 0 0">
+                        <h2>Datum: {{_classStartDateFormat}}</h2>
+                    </div>
+                    <div style="flex: 2 0 0">
+                        <h2>Tijd: {{_classTime}}</h2>
+                    </div>
+                </div>
+
+                <div style="display: flex; flex-direction: row;">
+                    <div style="width: 48%;">
+                        <h4>Lokaal</h4>
+                        {{_classRoom}}
+                        <h4>Docent</h4>
+                        <template is="dom-repeat" items="{{_teacherName}}">
+                            <div>{{item}}</div>
+                        </template>
+                        <h4>Klassen</h4>
+                        {{_class}}
+                    </div>
+                    <span style="border-left: solid 1px black"></span>
+                    <!--Voor docenten: -->
+                    <div style="width: 48%;" verborgen$="{{!_checkValues(c_rol, 'docent')}}">
+                        <paper-button class="my-button" on-click="_saveAttendance">Opslaan</paper-button>
+                        <h3 style="text-align: center">Presentie</h3>
+                        <div style="height: 80%; overflow: hidden">
+                            <!--https://www.webcomponents.org/element/vaadin/vaadin-grid-->
+                            <table id="tableAttendance" width="350">
+                                <tr>
+                                    <th>Nummer</th>
+                                    <th>Student</th>
+                                    <th style="text-align: left;">
+                                        <paper-checkbox
+                                                class="paper-checkbox"
+                                                checked="{{selectAllStudents}}">&nbsp;
+                                        </paper-checkbox>
+                                    </th>
+                                </tr>
+                                <template is="dom-repeat" items="{{_studenten}}">
+                                    <tr>
+                                        <td>{{item.number}}</td>
+                                        <td>{{item.firstName}} {{item.lastName}}</td>
+                                        <td>
+                                            <paper-checkbox class="paper-checkbox" checked="{{item.attended}}">&nbsp;</paper-checkbox>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </table>
+
+                        </div>
+                    </div>
+
+                    <!--Voor studenten: -->
+                    <div style="width: 48%;" verborgen$="{{!_checkValues(c_rol, 'student')}}">
+                        <div>
+                            <!-- PIECHART -->
+                            <div class="pie-chart-container">
+                                <svg-piechart class="pie-chart-img" size="250"
+                                              data="[[_student_attendence]]"
+                                              colors='["red", "green", "lightgray"]'>
+                                </svg-piechart>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </rsat-popup>
+
+        <iron-ajax
+                id="ajax_rooster_ophalen"
+                method="POST"
+                url="/student/rooster"
+                handle-as="json"
+                on-response="_handleRoosterResponse"
+                debounce-duration="300">
+        </iron-ajax>
+
+        <iron-ajax
+                id="ajax_presentie_ophalen"
+                method="POST"
+                url="/presentie/ophalen"
+                handle-as="json"
+                on-response="_presentie_ophalen_response_handler">
+        </iron-ajax>
+
+        <iron-ajax
+                id="ajax_presentie_opslaan"
+                method="POST"
+                url="/presentie/opslaan"
+                handle-as="json"
+                on-response="_presentie_opslaan_response_handler">
+        </iron-ajax>
+
+        <iron-ajax
+                id="ajax_student_presentie_ophalen"
+                method="POST"
+                url="/presentie/individueel/ophalen"
+                handle-as="json"
+                on-response="_student_presentie_ophalen_response_handler">
+        </iron-ajax>
+    </template>
+    <script>
+        (function () {
+            'use strict';
+
+            /* _xxxx private              : geen external data binding      - geen notify
+               _c_xx private constant     : geen external binding, constant - geen notify
+               c_xx  public constant      : one way external databinding [[c_xx]] - geen notify nodig
+               xxxx  public               : two way external databinding {{xxxx}} - notify nodig
+            */
+            Polymer({
+                is: 'my-calendar',
+
+                properties: {
+                    _options: {
+                        type: Object,
+                        value: {
+                            weekends: false,
+                            timeFormat: 'HH:mm',
+                            theme: false,
+                        },
+                        notify: true
+                    },
+                    c_rol: {
+                        type: String,
+                    },
+                    c_username: {
+                        type: String,
+                    },
+                    c_visible: {
+                        type: Boolean,
+                        value: false,
+                        observer: '_initializing',
+                    },
+                    _studenten: {
+                        type: Array,
+                    },
+                    _hidePopup: {
+                        type: Boolean,
+                        value: true,
+                    },
+                    _cursusName: {
+                        type: String,
+                        value: "Cursus naam",
+                    },
+                    _cursusCode: {
+                        type: String,
+                    },
+                    _classStartDate: {
+                        type: String,
+                    },
+                    _classStartTime: {
+                        type: String,
+                    },
+                    _classEndDate: {
+                        type: String,
+                    },
+                    _classEndTime: {
+                        type: String,
+                    },
+                    _classStartDateFormat: {
+                        type: String,
+                    },
+                    _classTime: {
+                        type: String,
+                    },
+                    _classRoom: {
+                        type: String,
+                    },
+                    _teacherName: {
+                        type: Array,
+                    },
+                    _class: {
+                        type: String,
+                    },
+                    _student_attendence: {
+                        type: Array,
+                        value: [0, 0, 1]
+                    },
+                    selectAllStudents: {
+                        type: Boolean,
+                        notify: true,
+                        observer: '_selectAllChanged'
+                    }
+                },
+
+                _initializing: function () {
+                    if (this.c_visible) {
+                        if (this.c_rol === "student" || this.c_rol === "docent") {
+                            this._roosterOphalen();
+                        }
+                    }
+                },
+
+                _roosterOphalen: function () {
+                    this._hidePopup = true;
+                    this.$.ajax_rooster_ophalen.contentType = "application/json";
+                    this.$.ajax_rooster_ophalen.body = {
+                        "username": this.c_username,
+                        "rol": this.c_rol
+                    };
+                    this.$.ajax_rooster_ophalen.generateRequest();
+                },
+
+                _handleRoosterResponse: function (request) {
+
+                    var events = [];
+                    for (var i = 0; i < request.detail.response.length; i++) {
+                        var les = request.detail.response[i];
+
+                        les["title"] = les["cursusNaam"];
+                        les["start"] = new Date(les["startDatum"] + "T" + les["startTijd"]);
+                        les["end"] = new Date(les["eindDatum"] + "T" + les["eindTijd"]);
+
+                        events.push(les);
+                    }
+
+                    this.set("_options.events", events);
+
+
+                    this.$.calendar._calendar.fullCalendar('removeEvents');
+                    this.$.calendar._calendar.fullCalendar('addEventSource', events);
+                },
+
+                _eventClick: function (event) {
+                    this._hidePopup = false;
+                    this._studenten = [];
+                    this.set('selectAllStudents', false);
+
+                    var dateFormat = event.detail.event.startDatum.split("-");
+                    var teachersList = event.detail.event.docentNaam.split(",");
+                    var teachers = [];
+
+                    for (var i = 0; i < teachersList.length; i++) {
+                        teachers.push(teachersList[i]);
+                    }
+
+                    this._cursusName = event.detail.event.cursusNaam;
+                    this._cursusCode = event.detail.event.cursusCode;
+                    this._classStartDate = event.detail.event.startDatum;
+                    this._classStartTime = event.detail.event.startTijd;
+                    this._classEndDate = event.detail.event.eindDatum;
+                    this._classEndTime = event.detail.event.eindTijd;
+                    this._classStartDateFormat = dateFormat[2] + "-" + dateFormat[1] + "-" + dateFormat[0];
+                    this._classTime = this._classStartTime + " - " + this._classEndTime;
+                    this._classRoom = event.detail.event.lokaal;
+                    this._teacherName = teachers;
+                    this._class = event.detail.event.klas;
+
+                    if (this._checkValues(this.c_rol, 'docent'))
+                        this._presentie_ophalen_request();
+
+                    if (this._checkValues(this.c_rol, 'student'))
+                        this._student_presentie_ophalen_request();
+                },
+
+                _closePopup: function () {
+                    this._hidePopup = true;
+                },
+
+                _checkValues: function (p_str1, p_str2) {
+                    return (p_str1 === p_str2);
+                },
+
+                _selectAllChanged: function (newValue) {
+                    if (typeof this._studenten === 'undefined')
+                        return;
+
+                    var studenten = JSON.parse(JSON.stringify(this._studenten));
+
+                    for (var i = 0; i < studenten.length; i++) {
+                        studenten[i].attended = newValue;
+                    }
+
+                    this.set('_studenten', studenten);
+                },
+
+                _presentie_ophalen_request: function () {
+                    this.$.ajax_presentie_ophalen.contentType = "application/json";
+                    this.$.ajax_presentie_ophalen.body = {
+                        "cursusCode": this._cursusCode,
+                        "startDate": this._classStartDate,
+                        "startTime": this._classStartTime,
+                        "endDate": this._classEndDate,
+                        "endTime": this._classEndTime,
+                        "room": this._classRoom
+                    };
+                    this.$.ajax_presentie_ophalen.generateRequest();
+                },
+
+                _presentie_ophalen_response_handler: function (request) {
+                    this.set('_studenten', request.detail.response);
+                },
+
+                //Student vanaf hier:
+                _student_presentie_ophalen_request: function () {
+                    this.$.ajax_student_presentie_ophalen.contentType = "application/json";
+                    this.$.ajax_student_presentie_ophalen.body = {
+                        "username": this.c_username,
+                        "cursusCode": this._cursusCode
+                        // "username": "kevin.groenendijk@student.hu.nl",
+                        // "cursusCode": "TICT-V1GP-18_2018"
+                    };
+                    if (this.c_rol === "student") {
+                        this.$.ajax_student_presentie_ophalen.generateRequest();
+                    }
+                },
+
+                _student_presentie_ophalen_response_handler: function (request) {
+                    if (request.detail.response.present === 0 && request.detail.response.absent === 0) {
+                        this.set('_student_attendence', [0, 0, 1]);
+                    } else {
+                        this.set('_student_attendence', [request.detail.response.absent, request.detail.response.present, 0]);
+                    }
+                },
+
+                _saveAttendance: function (event) {
+                    // console.log(event);
+                    console.log(this._studenten);
+
+                    this._presentie_opslaan_request();
+                },
+
+                _presentie_opslaan_request: function () {
+                    this.$.ajax_presentie_opslaan.contentType = "application/json";
+                    this.$.ajax_presentie_opslaan.body = {
+                        "cursusCode": this._cursusCode,
+                        "startDate": this._classStartDate,
+                        "startTime": this._classStartTime,
+                        "endDate": this._classEndDate,
+                        "endTime": this._classEndTime,
+                        "room": this._classRoom,
+                        "students": this._studenten
+                    };
+                    this.$.ajax_presentie_opslaan.generateRequest();
+                },
+
+                _presentie_opslaan_response_handler: function () {
+                    this.dispatchEvent(new CustomEvent('toast', {detail: {text: "Presentie opgeslagen"}}));
+                },
+            });
+        })();
+    </script>
+</dom-module>

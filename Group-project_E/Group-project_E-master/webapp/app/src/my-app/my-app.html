@@ -1,0 +1,900 @@
+<!doctype html>
+<!-- editing in eclipse to change tabs to spaces
+1.Click Window � Preferences
+2.Expand General � Editors
+3.Click Text Editors
+4.Check Insert spaces for tabs
+5.Click OK ad nauseam to apply the changes.
+-->
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<link rel="import" href="elements.html"> <!-- gewijzigd tov PSK -->
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css"
+      integrity="sha384-50oBUHEmvpQ+1lW4y57PTFmhCaXp0ML5d60M1M7uH2+nqUivzIebhndOJK28anvf" crossorigin="anonymous">
+
+<dom-module id="my-app">
+    <template>
+        <style>
+            :host {
+                --app-primary-color: #4285f4;
+                --app-secondary-color: black;
+                --app-very-lightgray: #fafafa;
+                --app-lightgray: #EEE;
+                --app-blue: #1a9fd9;
+                display: block;
+                font-size: 14px; /*toegevoegd tov psk                */
+                font-weight: 400; /*toegevoegd tov psk                */
+            }
+
+            app-drawer { /*toegevoegd tov psk */
+                --app-drawer-content-container: {
+                    background-color: var(--app-lightgray);
+                }
+            }
+
+            .toolbar {
+                background: var(--app-blue);
+                color: white;
+                height: 56px; /* to have a fixed height */
+            }
+
+            .bg-logo {
+                background: var(--app-lightgray) !important;
+            }
+
+            #toolbarlogo {
+                height: 37px;
+                background: var(--app-lightgray);
+                padding: 4px; /* to adjust the icon position */
+                padding-left: 11px; /* to adjust the icon position */
+            }
+
+            .drawer-list {
+                margin: 0 20px;
+                font-size: 14px; /*toegevoegd tov psk */
+                font-weight: 400; /*toegevoegd tov psk */
+            }
+
+            .drawer-list a {
+                display: block;
+                padding: 0 16px;
+                text-decoration: none;
+                color: black;
+                line-height: 40px;
+            }
+
+            .drawer-list a.iron-selected {
+                color: #3f51b5; /* blue-ish, gewijzigd tov psk      */
+                color: var(--app-blue);
+                font-weight: bold;
+            }
+
+            .drawer-list a[verborgen] { /* toegevoegd tov PSK               */
+                /* als verborgen true is dan ..     */
+                display: none; /* onzichtbaar maken                */
+            }
+
+            paper-material {
+                padding: 16px 16px 16px 16px;
+                width: calc(98% - 132px);
+                margin: 16px auto 16px auto;
+                background: var(--app-lightgray);
+            }
+
+            paper-card {
+                max-width: 500px;
+                margin: 30px;
+                /*box-shadow: 5px 5px 5px grey;*/
+                box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 8px 20px 0 rgba(0, 0, 0, 0.19);
+            }
+
+            .cafe-header {
+                @apply --paper-font-headline;
+                font-size: 30px;
+                margin-bottom: 5px;
+                text-align: center;
+            }
+
+            .cafe-light {
+                color: var(--paper-grey-600);
+                text-align: center;
+            }
+
+            .pie-chart-img {
+                width: 90%;
+                margin: 25px;
+            }
+
+            .pie-chart-container {
+                background-color: #1a9fd9;
+                margin-left: -16px;
+                margin-right: -16px;
+                width: 108.8%;
+                height: 360px;
+                margin-top: 10px;
+                padding-top: 25px;
+                padding-bottom: 15px;
+            }
+
+            table#studentsTable {
+                height: 11rem;
+                /*width: 100%;*/
+                margin-left: 5px;
+                display: inline-block;
+                overflow-y: scroll;
+            }
+
+            #studentsTable tbody {
+                display: block;
+            }
+
+            #studentsTable th:nth-child(2) {
+                width: 100%;
+            }
+
+            #studentsTable tr:nth-child(even) {
+                background-color: #f2f2f2;
+            }
+
+            #studentsTable tr:hover {
+                background-color: #ddd;
+            }
+
+            #studentsTable tr {
+                width: 100%;
+            }
+        </style>
+        <app-location route="{{_ar_route}}" use-hash-as-path></app-location>
+
+        <!--  Matches everything starting with /
+              and stores it in _ar_route_data.page
+              id toegevoegd zodat element ook in andere polymerElementen benaderbaar wordt
+              middels: document.querySelector('my-app').$.approuter.data={page: "xx"}
+        -->
+        <app-route id="approuter"
+                   route="{{_ar_route}}"
+                   pattern="/:page"
+                   data="{{_ar_route_data}}"
+                   tail="{{_ar_subroute}}">
+        </app-route>
+        <!--  Matches everything starting with /xxx/
+              and stores it in _ar_subroute_data.subpage
+              geen id nodig -->
+        <app-route
+                route="{{_ar_subroute}}"
+                pattern="/:subpage"
+                data="{{_ar_subroute_data}}"
+                tail="{{_ar_subsubroute}}">
+        </app-route>
+        <!--  Matches everything starting with /xxx/yyy/
+              and stores it in _ar_subsubroute_data.subsubpage
+              geen id nodig -->
+        <app-route
+                route="{{_ar_subsubroute}}"
+                pattern="/:subsubpage"
+                data="{{_ar_subsubroute_data}}">
+        </app-route>
+
+
+        <!-- Main Toolbar -->
+        <app-drawer-layout>
+            <app-drawer slot="drawer">
+                <!--  _ar_page bepaald welk menu geselecteerd is.
+                      het menu dat de gebruiker klikt veroorzaakt een andere url
+                      deze url wordt door <app-location> en <app-route> omgezet in variabelen
+                      _ar_route , _ar_route_data en _ar_subroute
+                      let op: _ar_page wordt niet door de selectie gewijzigd maar
+                              vanuit de URL via een observer functie
+                              er is dus een sterke gelijkenis tussen _ar_page en de URL
+                              met name URL "xx/yy"  wordt _ar_page "xx_yy" maar ook
+                                       URL "/"      wordt _ar_page "home" en
+                                       overige URL  wordt _ar_page "view404".
+                -->
+                <!-- blue (empty) toolbar in menu -->
+                <app-toolbar class="toolbar bg-logo">
+                    <img id="toolbarlogo" src="../../images/hu_logo.png" alt="HU"/>
+                </app-toolbar>
+                <iron-selector selected="[[_ar_page]]" attr-for-selected="name" class="drawer-list" role="navigation">
+                    <!-- TODO: Willen we dit hidden als er niet ingelogd is en geen docent is? -->
+                    <a name="home" href$="[[_c_baseURL]]" verborgen$="[[!_are_strings_equal(_rol, 'docent')]]">
+                        <iron-icon icon="home"></iron-icon>
+                        <span>Dashboard</span>
+                    </a>
+
+                    <!-- altijd beschikbaar *kuch*
+                    <a name="systeem_instellen_systeemdatum" href$="[[_c_baseURL]]systeem_instellen_systeemdatum">
+                        <iron-icon icon="icons:today"></iron-icon>
+                        <span>(test) Instellen systeemdatum</span>
+                    </a>
+                    -->
+
+                    <a name="login" href$="[[_c_baseURL]]login" verborgen$="[[!_are_strings_equal(_rol, 'undefined')]]">
+                        <iron-icon icon="account-box"></iron-icon>
+                        <span>Inloggen</span>
+                    </a>
+
+                    <a name="logout" href$="[[_c_baseURL]]logout" verborgen$="[[_are_strings_equal(_rol, 'undefined')]]">
+                        <iron-icon icon="account-box"></iron-icon>
+                        <span>Uitloggen</span>
+                    </a>
+
+                    <!-- bischikbaar voor docent/student -->
+                    <a name="calendar" href$="[[_c_baseURL]]calendar" verborgen$="[[_are_strings_equal(_rol, 'undefined')]]">
+                        <iron-icon icon="date-range"></iron-icon>
+                        <span>Rooster</span>
+                    </a>
+
+                    <!-- beschikbaar voor docent -->
+                    <a name="escalaties" href$="[[_c_baseURL]]escalaties" verborgen$="[[!_isSLB(_rol)]]">
+                        <iron-icon icon="social:notifications"></iron-icon>
+                        <span>Escalaties</span>
+                    </a>
+
+                    <!-- beschikbaar voor student -->
+
+                    <a name="student_medestudenten" href$="[[_c_baseURL]]student_medestudenten" verborgen$="[[!_are_strings_equal(_rol, 'student')]]">
+                        <iron-icon icon="social:group"></iron-icon>
+                        <span>Toon medestudenten</span>
+                    </a>
+
+                </iron-selector>
+            </app-drawer>
+
+            <!-- Main Content -->
+            <!-- blue title toolbar in menu -->
+            <app-toolbar class="toolbar">
+                <paper-icon-button icon="menu" drawer-toggle></paper-icon-button>
+                <span>[[_ar_page_title]] ([[_systeemdatumlokaal]])</span>
+            </app-toolbar>
+
+            <iron-pages
+                    id="iron-pages"
+                    attr-for-selected="page-name"
+                    selected="[[_ar_page]]"
+                    fallback-selection="view404"
+                    role="main">
+                <!-- in iron-pages kun je niet handmatig een element selecteren.
+                        Het is dus zinloos om te coderen selected=_ar_page met {{}}
+                        Wel wordt _ar_selected_object gevuld met de sectie die hoort bij _ar_page
+                        Via een observer kan hieruit de naam van het binnen de sectie horend
+                        element bepaald worden gebruik makend van _ar_selected_object.attributes["element$"].nodeValue
+                        en de titel via _ar_selected_object.title
+                -->
+
+                <!-- sections voor iedereen -->
+                <!-- element$="none" of weglaten van element$ geeft beide aan dat er geen polymerElement gebruikt zal gaan worden -->
+                <section page-name="home"
+                         page-title="Home"
+                         element$="none">
+                    <div style="margin: 30px;">
+                        <template is="dom-if" if="[[_are_strings_equal(_rol, 'undefined')]]">
+                            U dient ingelogd te zijn.
+                        </template>
+                    </div>
+
+                    <template is="dom-if" if="[[_are_strings_equal(_rol, 'docent')]]">
+                        <template is="dom-repeat" items="{{_courses}}">
+                            <paper-card style="width: 25rem;">
+                                <div class="card-content">
+                                    <div class="cafe-header">
+                                        {{item.cursusCode}}
+                                    </div>
+                                    <div class="pie-chart-container">
+                                        <svg-piechart class="pie-chart-img" size="350"
+                                                      colors='["red", "green", "lightgray"]'
+                                                      data="[[item.pieData]]"></svg-piechart>
+
+                                        <template is="dom-if" if="[[item.noData]]">
+                                            <p style="padding-top: 15px;" class="cafe-light">Presentie van dit vak is nog niet ingevuld...</p>
+                                        </template>
+                                    </div>
+                                </div>
+                                <div class="card-actions" style="margin-top: 30px;">
+                                    <div class="horizontal justified">
+                                        <paper-button class="cafe-reserve" raised on-click="_eventClick">Open</paper-button>
+                                        <paper-button class="cafe-reserve" on-click="_shareAttendance">Share</paper-button>
+                                    </div>
+                                </div>
+                            </paper-card>
+                        </template>
+                    </template>
+
+                    <rsat-popup id="popup" pos="center" backdrop="true" hidden="{{_hidePopup}}">
+                        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css"
+                              integrity="sha384-50oBUHEmvpQ+1lW4y57PTFmhCaXp0ML5d60M1M7uH2+nqUivzIebhndOJK28anvf" crossorigin="anonymous">
+                        <!--<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>-->
+
+                        <div name="header"
+                             style="background-color: #00a1e1; margin-top: -20px; height: 3.5rem; color: white; font-weight: bold; display: flex; flex-direction: row;">
+                            <div style="flex: 0 0 0; margin: 10px;">
+                                <i style="font-size: 2.5em; width: auto" class="far fa-clock"></i>
+                            </div>
+                            <div style="flex: 14 0 0; margin-left: 1rem">
+                                <h1>{{_className}}</h1>
+                            </div>
+                            <div style="flex: 1 0 0">
+                                <paper-button on-click="_closePopup"><i style="font-size: 2.5em" class="fas fa-times"></i></paper-button>
+                            </div>
+                        </div>
+                        <div name="content" style="width: 50rem; margin: 3%; height: 20rem;">
+                            <!-- Escaleren popup voor docenten -->
+                            <div style="width: 93%">
+
+                                <template is="dom-if" if="[[_are_strings_equal(_rol, 'docent')]]">
+                                    <h3>Presentie</h3>
+                                    <table id="attendanceTable" width="750">
+                                        <!--<template is="dom-repeat" items="{{_studenten}}">-->
+                                        <tr>
+                                            <td style="padding-right: 15px;">Aanwezig: {{_courseAttended}}</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding-right: 15px;">Afwezig: {{_courseAbsent}}</td>
+                                        </tr>
+                                        <!--</template>-->
+                                    </table>
+                                </template>
+
+                                <template is="dom-if" if="[[_are_strings_equal(_rol, 'docent')]]">
+                                    <h3>Your students:</h3>
+                                    <table id="studentsTable" width="750">
+                                        <template is="dom-repeat" items="{{_studenten}}">
+                                            <tr>
+                                                <td style="padding-right: 15px;">{{item.number}}</td>
+                                                <td style="width: 50%">{{item.firstName}} {{item.lastName}}</td>
+                                                <td style="width: 15%">Aanwezigheid: {{item.present}}</td>
+                                                <td style="width: 15%">Afwezigheid: {{item.absent}}</td>
+                                                <td>
+                                                    <paper-button style="border: 1px solid black; padding: 2px 5px;" on-click="_escaleren">Escaleren
+                                                    </paper-button>
+                                                </td>
+                                            </tr>
+                                        </template>
+                                    </table>
+                                </template>
+                            </div>
+                        </div>
+                    </rsat-popup>
+
+                </section>
+
+                <section page-name="systeem_instellen_systeemdatum"
+                         page-title="Instellen systeemdatum"
+                         element$="my-systeemdatum">
+                    <paper-material elevation="1">
+                        <!--
+                          c_visible="true" als deze section geselecteerd is.
+                          LET OP: boolean values moeten als string doorgegeven worden,
+                                  vandaar de quotes rondom de function aanroep.
+                                  De aanwezige literal waarde wordt met enkele quotes doorgegeven
+                        -->
+                        <my-systeemdatum
+                                systeemdatumlokaal="{{_systeemdatumlokaal}}"
+                                systeemdatumstandaard="{{_systeemdatumstandaard}}"
+                                c_visible="[[_are_strings_equal(_ar_page, 'systeem_instellen_systeemdatum')]]">
+                        </my-systeemdatum>
+                    </paper-material>
+                </section>
+
+                <section page-name="login"
+                         page-title="Login"
+                         element$="my-login">
+                    <paper-material elevation="1" style="max-width: 380px;">
+                        <my-login username="{{_username}}" rol="{{_rol}}"></my-login>
+                    </paper-material>
+                </section>
+
+                <section page-name="logout"
+                         page-title="Uitloggen"
+                         element="my-logout">
+                    <paper-material elevation="1">
+                        <my-logout rol="{{_rol}}"></my-logout>
+                    </paper-material>
+                </section>
+
+                <section page-name="calendar"
+                         page-title="Rooster"
+                         element$="my-calendar">
+                    <paper-material elevation="1">
+                        <my-calendar
+                                c_visible="[[_are_strings_equal(_ar_page, 'calendar')]]"
+                                c_rol="[[_getSimpleRol(_rol)]]"
+                                c_username="[[_username]]"
+                                on-toast='_onToast'>
+                        </my-calendar>
+                    </paper-material>
+                </section>
+
+                <section page-name="escalaties"
+                         page-title="Escalaties"
+                         element$="my-escalaties">
+                    <my-escalaties
+                            c_visible="[[_are_strings_equal(_ar_page, 'escalaties')]]"
+                            c_rol="[[_getSimpleRol(_rol)]]"
+                            c_username="[[_username]]">
+                    </my-escalaties>
+                </section>
+
+                <!-- sections voor docent -->
+
+                <!-- sections voor student -->
+                <section page-name="student_medestudenten"
+                         page-title="Overzicht medestudenten"
+                         element$="my-medestudenten">
+                    <paper-material elevation="1">
+                        <!--
+                            c_visible="true" als deze section geselecteerd is.
+                            LET OP: boolean values moeten als string doorgegeven worden,
+                                    vandaar de quotes rondom de function aanroep.
+                                    De aanwezige literal waarde wordt met enkele quotes doorgegeven
+                        -->
+                        <my-medestudenten
+                                c_visible="[[_are_strings_equal(_ar_page, 'student_medestudenten')]]"
+                                c_rol="[[_getSimpleRol(_rol)]]"
+                                c_username="[[_username]]">
+                        </my-medestudenten>
+                    </paper-material>
+                </section>
+
+                <section page-name="student_details" title="STUDENT DETAILS">
+                    <paper-material elevation="1">
+                        <h2 class="page-title">Student: [[_ar_subsubroute_data.subsubpage]]</h2>
+                        <div>This is [[_ar_subsubroute_data.subsubpage]]'s section</div>
+                    </paper-material>
+                </section>
+
+                <section page-name="view404"
+                         title="PAGE NOT FOUND"
+                         element$="my-view404">
+                    <paper-material elevation="1">
+                        <my-view404></my-view404>
+                    </paper-material>
+                </section>
+            </iron-pages>
+        </app-drawer-layout>
+
+        <paper-toast id="toast" duration="[[_toastDuration]]" text="[[_toastText]]">
+            <template is="dom-if" if="[[_are_strings_equal(_toastDuration, 0)]]">
+                <paper-button on-click="_toastClicked" style="text-transform: none; color: #eeff41;">Sluiten</paper-button>
+            </template>
+        </paper-toast>
+
+        <iron-ajax
+                id="ajax_studenten_ophalen"
+                method="POST"
+                url="/studenten/ophalen"
+                handle-as="json"
+                on-response="_studenten_ophalen_response_handler">
+        </iron-ajax>
+
+        <iron-ajax
+                id="ajax_docent_presentie_ophalen"
+                method="POST"
+                url="/presentie/docent/ophalen"
+                handle-as="json"
+                on-response="_docent_presentie_ophalen_response_handler">
+        </iron-ajax>
+
+        <iron-ajax
+                id="ajax_student_escaleren"
+                method="POST"
+                url="/student/escaleren"
+                handle-as="json"
+                on-response="_student_escaleren_response_handler">
+        </iron-ajax>
+
+    </template>
+    <script>
+        (function () {
+            'use strict';
+
+            /* _xxxx private              : geen external data binding      - geen notify
+               _c_xx private constant     : geen external binding, constant - geen notify
+               c_xx  public constant      : one way external databinding [[c_xx]] - geen notify nodig
+               xxxx  public               : two way external databinding {{xxxx}} - notify nodig
+            */
+
+            Polymer({
+                is: 'my-app',
+
+                properties: {
+                    _c_baseURL: {
+                        type: String,
+                        value: "/#/",
+                    },
+                    _rol: {
+                        type: String,
+                        value: "undefined",  		//zodat login zichtbaar wordt
+                    },
+                    _ar_page: {
+                        type: String,
+                        reflectToAttribute: true,
+                        value: "",
+                    },
+                    _ar_page_title: {
+                        type: String,
+                        reflectToAttribute: true,
+                        value: "",
+                    },
+                    _ar_route: {                  //route-object betreffende deel 1 van de URL vanwege pattern "/"
+                        type: Object,
+                    },
+                    _ar_route_data: {
+                        type: Object,               //{page: "xxx"} met xxx url-deel1
+                    },
+                    _ar_selected_object: {
+                        type: Object,               //active section
+                                                    //.element=xxx met xxx is de naam van het polymer element
+                                                    //.title=yyyy  met yyy is de title voor in de header
+                        // observer: '_ar_selected_object_changed',
+                    },
+                    _ar_subroute: {
+                        type: Object,				//route-object dat niet matched vanuit <_ar_route> dwz alles na /xxx/ in de url
+                    },
+                    _ar_subroute_data: {
+                        type: Object,               //{subpage: "yyy"} dat matched na /xxx/ in de url
+                    },
+                    _ar_subsubroute: {
+                        type: Object,               //route-object dat niet matched vanuit <_ar_subroute> dwz alles na /xxx/yyy/ in de url
+                    },
+                    _ar_subsubroute_data: {
+                        type: Object,             //{subsubpage: "zzz"} dat matched na /xxx/yyy/ in de url
+                    },
+                    _systeemdatumlokaal: {		//used as global in many element
+                        type: String,
+                    },
+                    _systeemdatumstandaard: {
+                        type: String,
+                    },
+                    _username: {
+                        type: String,
+                    },
+                    _hidePopup: {
+                        type: Boolean,
+                        value: true
+                    },
+                    c_visible: {
+                        type: Boolean,
+                        value: false,
+                        observer: '_initializing',
+                    },
+                    _studenten: {
+                        type: Array,
+                    },
+                    _className: {
+                        type: String,
+                        value: "Cursus naam",
+                    },
+                    _cursusCode: {
+                        type: String
+                    },
+                    _teacherName: {
+                        type: String,
+                        value: "Docent naam",
+                    },
+                    _attendance: {
+                        type: Number,
+                        value: 80
+                    },
+                    _absence: {
+                        type: Number,
+                        value: 20
+                    },
+                    _courses: {
+                        type: Array,
+                    },
+                    _toastDuration: {
+                        type: Number,
+                    },
+                    _toastText: {
+                        type: String,
+                    },
+                    _courseAttended: {
+                        type: Number,
+                    },
+                    _courseAbsent: {
+                        type: Number,
+                    }
+                },  //end of properties
+
+                observers: [
+                    '_ar_route_data_page_changed(_ar_route_data.page)',
+                    '_ar_subroute_data_subpage_changed(_ar_subroute_data.subpage)',
+                ],
+
+                ready: function () {
+                    /* deze functie wordt eenamalig aangeroepen wanneer de applicatie start
+                    /*  _systeemdatumlokaal variabele wordt gebruikt om de huidige systeem datum (of de test systeemdatum)
+                         in de pagina kop te vermelden
+                    */
+                    /* gebruikt het Javascript date object om op basis van een standaarddatumstring
+                       een object te maken en via dit een lokaledatumstring te maken */
+                    var eenDatumObject = new Date(); // is vandaag
+                    this._systeemdatumstandaard = this.date_to_standaard_string(eenDatumObject);
+                    this._systeemdatumlokaal = eenDatumObject.toLocaleDateString();
+                    console.log("application ready to run");
+
+                    if (this._username === undefined) {
+                        this.$.approuter.data = {page: "login"};
+                    }
+
+                    if (this._are_strings_equal(this._rol, 'docent'))
+                        this._docent_presentie_ophalen_request();
+                },
+
+                _ar_route_data_page_changed: function (pNewPage) {
+                    //if (!this.$.drawer.persistent) {
+                    //  this.$.drawer.close();
+                    //}
+                    if ((pNewPage == "") || (pNewPage == undefined)) {
+                        // this._docent_presentie_ophalen_request();
+
+                        if (this._are_strings_equal(this._rol, 'docent'))
+                            this._docent_presentie_ophalen_request();
+
+                        this._ar_page = "home";
+                        this._closePopup();
+                    } else {
+                        this._ar_page = pNewPage;
+                    }
+
+                    this._ar_selected_object = this.$['iron-pages'].querySelector('[page-name=' + this._ar_page + ']');
+                    this._ar_page_title = this._ar_selected_object.getAttribute("page-title");
+
+                    if (this._rol === "undefined" && this._ar_page === 'home') {
+                        this.$.approuter.data = {page: "login"};
+                    }
+
+                    if (this._are_strings_equal(this._rol, 'student') && this._ar_page === 'home') {
+                        this.$.approuter.data = {page: "calendar"};
+                    }
+                },
+
+                _ar_selected_object_changed: function (pSelectedObject) {
+                    // Load page import on demand. Show 404 page if fails
+                    if (pSelectedObject == undefined) {
+                        //no element to load
+                        return
+                    }
+                    var lAttributeNode = pSelectedObject.attributes["element$"];
+                    if (lAttributeNode == undefined) {
+                        //no element to load
+                        return
+                    }
+                    var lElementName = lAttributeNode.nodeValue;
+                    if (lElementName == "none") {
+                        //no element to load
+                        return
+                    }
+                    var resolvedPageUrl = this.resolveUrl("../" + lElementName + '/' + lElementName + '.html');
+                    this.importHref(resolvedPageUrl, null, this._ar_showPage404, true);
+                },
+
+                _ar_showPage404: function () {
+                    this._ar_page = 'view404';
+                },
+
+                _ar_subroute_data_subpage_changed: function (pNewSubpage) {
+                    if ((pNewSubpage == "") || (pNewSubpage == undefined)) {
+                        // nothing to do
+                    } else {
+                        this._ar_page = this._ar_route_data.page + "_" + pNewSubpage;
+                    }
+                },
+
+                _showPopup: function () {
+                    this._hidePopup = false;
+                },
+
+                _closePopup: function () {
+                    this._hidePopup = true;
+                },
+
+                _getSimpleRol: function (rol) {
+                    if (typeof rol !== 'string')
+                        return null;
+
+                    if (rol.includes("|"))
+                        return rol.split("|")[0];
+                    else
+                        return rol;
+                },
+
+                _eventClick: function (event) {
+                    this._showPopup();
+                    this._className = event.model.item.cursusCode;
+                    this._cursusCode = event.model.item.cursusCode;
+                    this._courseAttended = event.model.item.present;
+                    this._courseAbsent = event.model.item.absent;
+
+                    if (this._are_strings_equal(this._rol, 'docent')) {
+                        this._studenten_ophalen_request_handler();
+                    }
+                },
+
+                //TODO: Piechart docent gedeelte vanaf hier:
+                _docent_presentie_ophalen_request: function () {
+                    this.$.ajax_docent_presentie_ophalen.contentType = "application/json";
+                    this.$.ajax_docent_presentie_ophalen.body = {
+                        "username": this._username
+                    };
+                    this.$.ajax_docent_presentie_ophalen.generateRequest();
+                },
+
+                _docent_presentie_ophalen_response_handler: function (request) {
+                    for (var i = 0; i < request.detail.response.length; i++) {
+                        request.detail.response[i].noData = request.detail.response[i].present === 0 && request.detail.response[i].absent === 0;
+                        request.detail.response[i].pieData = [
+                            request.detail.response[i].absent,
+                            request.detail.response[i].present,
+                            request.detail.response[i].noData ? 1 : 0
+                        ]
+                    }
+
+                    this.set('_courses', request.detail.response);
+                },
+
+                /* de volgende functie wordt gebruikt om een boolean te produceren
+                  die true is als de twee strings gelijk zijn.
+                  wordt gebruikt in index.html
+                */
+                _are_strings_equal: function (p_str1, p_str2) {
+                    if (typeof p_str1 === 'string') {
+                        if (p_str1.includes("|")) {
+                            p_str1 = p_str1.split("|")[0];
+                        }
+                    }
+
+                    if (typeof p_str2 === 'string') {
+                        if (p_str2.includes("|")) {
+                            p_str2 = p_str2.split("|")[0];
+                        }
+                    }
+
+                    return (p_str1 === p_str2);
+                },
+
+                _isSLB: function (str) {
+                    if (typeof str === 'string') {
+                        if (str.includes("|")) {
+                            str = str.split("|")[1];
+                            return str === 'true';
+                        }
+                    }
+
+                    return false;
+                },
+
+                // convert a JSDate-object to standaard format (=YYYY-MM-DD)
+                date_to_standaard_string: function (p_JSDate) {
+                    var lJaar = p_JSDate.getFullYear();
+                    var lMaand = p_JSDate.getMonth() + 1;
+                    var lDag = p_JSDate.getDate();
+
+                    var lMaandStr = lMaand.toString();
+                    if (lMaandStr.length == 1) {
+                        lMaandStr = "0" + lMaandStr;
+                    }
+                    var lDagStr = lDag.toString();
+                    if (lDagStr.length == 1) {
+                        lDagStr = "0" + lDagStr;
+                    }
+                    var lString =
+                        lJaar.toString() + "-" +
+                        lMaandStr + "-" +
+                        lDagStr;
+                    return lString;
+                },
+
+                // convert a YY-MM-DD string to local format (dutch lokaal: DD-MM-YYYY)
+                standaarddatumstring_to_lokaledatumstring: function (p_standaarddatumstring) {
+                    var lokaledatumstring = "";
+                    if (p_standaarddatumstring != "") {
+                        /* gebruikt het Javascript date object om op basis van een standaarddatumstring
+                           een object te maken en via dit een lokaledatumstring te maken */
+                        var eenDatumObject = new Date(p_standaarddatumstring);
+                        lokaledatumstring = eenDatumObject.toLocaleDateString();
+                        /*deze conversie werk zowel voor nederlandse windows als internationale windows. */
+                    }
+                    return lokaledatumstring;
+                },
+
+                _studenten_ophalen_request_handler: function () {
+                    this.$.ajax_studenten_ophalen.contentType = "application/json";
+                    this.$.ajax_studenten_ophalen.body = {
+                        //"username": "jos.vanreenen@hu.nl",
+                        "username": this._username,
+                        "cursusCode": this._cursusCode
+                    };
+                    this.$.ajax_studenten_ophalen.generateRequest();
+                },
+
+                _studenten_ophalen_response_handler: function (request) {
+                    this._studenten = request.detail.response;
+
+                    var studentAttendance = [];
+                    for (var i = 0; i < this._studenten.length; i++) {
+                        studentAttendance[i] = {studentNumber: this._studenten[i].number, _attendance: 0}
+                    }
+
+                    this.set("_attendance", studentAttendance);
+                },
+
+                _shareAttendance: function () {
+                    window.location.replace("https://www.youtube.com/watch?v=wZZ7oFKsKzY");
+                },
+
+                _escaleren: function (event) {
+                    var item = event.model.item;
+
+                    this.$.ajax_student_escaleren.contentType = "application/json";
+                    this.$.ajax_student_escaleren.body = {
+                        "teacherUsername": this._username,
+                        "studentUsername": item.username,
+                        "cursusCode": this._cursusCode
+                    };
+                    this.$.ajax_student_escaleren.generateRequest();
+                },
+
+                _student_escaleren_response_handler: function (request) {
+                    if (request.detail.response.error === 0) {
+                        this._onToast({
+                            detail: {
+                                text: "Student geëscaleerd"
+                            }
+                        });
+                    } else if (request.detail.response.error === 1) {
+                        this._onToast({
+                            detail: {
+                                text: "Student is al reeds geëscaleerd"
+                            }
+                        });
+                    } else if (request.detail.response.error === 2) {
+                        this._onToast({
+                            detail: {
+                                text: "Student heeft geen SLB'er",
+                                duration: 0
+                            }
+                        });
+                    }
+                },
+
+                _onToast: function (event) {
+                    var options = {};
+                    if (typeof options !== 'undefined')
+                        options = event.detail;
+
+                    var duration = 'duration' in options ? options['duration'] : 3000;
+                    var text = 'text' in options ? options['text'] : "Toast";
+
+                    this.set('_toastDuration', duration);
+                    this.set('_toastText', text);
+
+                    if (duration !== 0) {
+                        this.$.toast.toggle();
+
+                        var that = this;
+                        setTimeout(function () {
+                            that.$.toast.open()
+                        }, 100);
+                    } else {
+                        this.$.toast.open();
+                    }
+                },
+
+                _toastClicked: function () {
+                    this.$.toast.toggle();
+                },
+            });
+
+        })();
+    </script>
+
+</dom-module>
